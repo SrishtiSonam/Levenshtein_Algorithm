@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Security Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, rgb(189, 122, 255) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            margin-top: 100px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #3498db;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .toggle-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:not(.active) {
+            background: transparent;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-safe {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border-left: 5px solid #27ae60;
+        }
+
+        .result-warning {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border-left: 5px solid #c0392b;
+        }
+
+        .result-unverified {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+            border-left: 5px solid #7f8c8d;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .comparison-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .comparison-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .similarity-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .similarity-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .badge-safe { background: rgba(255, 255, 255, 0.3); }
+        .badge-similar { background: rgba(231, 76, 60, 0.3); }
+        .badge-somewhat { background: rgba(243, 156, 18, 0.3); }
+        .badge-different { background: rgba(46, 204, 113, 0.3); }
+
+        .icon {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="toggle-container">
+        <div class="toggle">
+            <button class="toggle-btn" onclick="switchSection('password')">Password Check</button>
+            <button class="toggle-btn active" onclick="switchSection('phishing')">Phishing Check</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="header">
+            <h1> Enhanced Security Checker</h1>
+            <p>Protect yourself from phishing attacks and weak passwords</p>
+        </div>
+
+        <div class="content">
+            <!-- Phishing Detection Section -->
+            <div id="phishing-section" class="section active">
+                <div class="input-group">
+                    <label for="url-input"> Enter URL or Email to Check:</label>
+                    <input type="text" id="url-input" placeholder="e.g., hdfcbank.com or user@gmail.com">
+                </div>
+                <button class="btn" onclick="checkPhishing()">
+                    <span class="icon"></span>Analyze for Phishing
+                </button>
+                <div id="phishing-results" class="results"></div>
+            </div>
+
+            <!-- Password Similarity Section -->
+            <div id="password-section" class="section">
+                <div class="input-group">
+                    <label for="password-input"> Enter New Password:</label>
+                    <input type="password" id="password-input" placeholder="Enter your new password">
+                </div>
+                <button class="btn" onclick="checkPassword()">
+                    Check Password Similarity
+                </button>
+                <div id="password-results" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Trusted domains and previous passwords
+        const trustedEmails = [
+            "hdfcbank.com", "onlinesbi.com", "icicibank.com", "axisbank.com",
+            "gmail.com", "yahoo.com", "outlook.com", "protonmail.com",
+            "amazon.com", "flipkart.com", "paytm.com", "google.com",
+            "gov.in", "uidai.gov.in", "epfindia.gov.in", "rbi.org.in",
+            "edu.in", "ac.in", "iitb.ac.in", "du.ac.in"
+        ];
+
+        const previousPasswords = [
+            "@Bank1234", "Secure123!", "Password123!", "Love@Life99", "Work@Home1", 
+            "Login#2024", "Jan2023@Pass", "Complex@Pass123", "qwerty@123", "admin@pass1"
+        ];
+
+        // Levenshtein distance function
+        function levenshtein_Algorithm(str1, str2, max_Distance = -1) {
+            const m = str1.length;
+            const n = str2.length;
+            
+            if (max_Distance === -1) {
+                max_Distance = Math.floor(Math.max(m, n) / 3);
+            }
+            
+            if (Math.abs(m - n) > max_Distance) {
+                return max_Distance + 1;
+            }
+            
+            if (m > n) {
+                return levenshtein_Algorithm(str2, str1, max_Distance);
+            }
+            
+            let prev = new Array(m + 1);
+            let curr = new Array(m + 1);
+            
+            for (let i = 0; i <= m; i++) {
+                prev[i] = i;
+            }
+            
+            for (let j = 1; j <= n; j++) {
+                curr[0] = j;
+                let rowMin = curr[0];
+                for (let i = 1; i <= m; i++) {
+                    if (str1[i-1] === str2[j-1]) {
+                        curr[i] = prev[i-1];
+                    } else {
+                        const substitute = prev[i-1] + 1;
+                        const insert = curr[i-1] + 1;
+                        const deleteOp = prev[i] + 1;
+                        curr[i] = Math.min(substitute, insert, deleteOp);
+                    }
+                    rowMin = Math.min(rowMin, curr[i]);
+                }
+                if (rowMin > max_Distance) {
+                    return max_Distance + 1;
+                }
+                prev = curr.slice();
+            }
+            return prev[m];
+        }
+
+        function calculateSimilarity(str1, str2) {
+            const distance = levenshtein_Algorithm(str1, str2);
+            const maxLen = Math.max(str1.length, str2.length);
+            if (maxLen === 0) return 100.0;
+            return (1.0 - distance / maxLen) * 100.0;
+        }
+
+        function toLowerCase(str) {
+            return str.toLowerCase();
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(section + '-section').classList.add('active');
+            document.querySelectorAll('.results').forEach(result => result.classList.remove('show'));
+        }
+
+        function checkPhishing() {
+            const input = document.getElementById('url-input').value.trim();
+            const resultsDiv = document.getElementById('phishing-results');
+            
+            if (!input) {
+                showResult(resultsDiv, 'Please enter a URL or email address.', 'unverified');
+                return;
+            }
+            
+            const inputLower = toLowerCase(input);
+            let bestMatch = null;
+            let bestSimilarity = 0;
+            
+            for (const trusted of trustedEmails) {
+                const trustedLower = toLowerCase(trusted);
+                const similarity = calculateSimilarity(inputLower, trustedLower);
+                
+                if (similarity > bestSimilarity) {
+                    bestSimilarity = similarity;
+                    bestMatch = trusted;
+                }
+                
+                if (similarity === 100.0) {
+                    showPhishingResult(resultsDiv, input, trusted, similarity, 'safe');
+                    return;
+                }
+                
+                if (similarity >= 65.0) {
+                    showPhishingResult(resultsDiv, input, trusted, similarity, 'warning');
+                    return;
+                }
+            }
+            showPhishingResult(resultsDiv, input, bestMatch, bestSimilarity, 'unverified');
+        }
+
+        function showPhishingResult(container, input, match, similarity, type) {
+            let title, message, icon;
+            
+            switch (type) {
+                case 'safe':
+                    title = 'SAFE';
+                    message = `Exact match with trusted domain: <strong>${match}</strong>`;
+                    break;
+                case 'warning':
+                    title = 'PHISHING WARNING';
+                    message = `Input: <strong>${input}</strong><br>Similar to: <strong>${match}</strong> (${similarity.toFixed(1)}%)<br><em>This may be a phishing attempt!</em>`;
+                    break;
+                case 'unverified':
+                    title = 'UNVERIFIED';
+                    message = `Domain not found in trusted list.<br>Closest match: <strong>${match}</strong> (${similarity.toFixed(1)}%)<br><em>Please verify independently.</em>`;
+                    break;
+            }
+            
+            container.innerHTML = `
+                <div class="result-title">${title}</div>
+                <div>${message}</div>
+            `;
+            container.className = `results result-${type} show`;
+        }
+
+        function checkPassword() {
+            const newPassword = document.getElementById('password-input').value;
+            const resultsDiv = document.getElementById('password-results');
+            
+            if (!newPassword) {
+                showResult(resultsDiv, 'Please enter a password.', 'unverified');
+                return;
+            }
+            
+            let isSimilar = false;
+            let highestSimilarity = 0;
+            
+            for (const oldPwd of previousPasswords) {
+                const similarity = calculateSimilarity(newPassword, oldPwd);
+                if (similarity > highestSimilarity) {
+                    highestSimilarity = similarity;
+                }
+                if (similarity >= 70.0) {
+                    isSimilar = true;
+                    break;
+                }
+            }
+            
+            showSimplePasswordResult(resultsDiv, isSimilar, highestSimilarity);
+        }
+
+        function showSimplePasswordResult(container, isSimilar, highestSimilarity) {
+            let title, message, resultClass;
+            
+            if (isSimilar) {
+                title = 'PASSWORD NOT SUGGESTED FOR USE';
+                message = `This password is too similar to one of your passwords.<br><br><strong>Highest similarity detected:</strong> ${highestSimilarity.toFixed(1)}%<br><br><em>Create a more unique password, as different passwords for different accounts are suggested for safety.</em>`;
+                resultClass = 'result-warning';
+            } else {
+                title = 'PASSWORD CAN BE USED';
+                message = `This password is sufficiently different from all of your passwords.<br><br><strong>Highest similarity:</strong> ${highestSimilarity.toFixed(1)}%<br><br><em>Good job, as different passwords for different accounts are suggested for safety.</em>`;
+                resultClass = 'result-safe';
+            }
+            
+            container.innerHTML = `
+                <div class="result-title">${title}</div>
+                <div>${message}</div>
+            `;
+            container.className = `results ${resultClass} show`;
+        }
+
+        function showResult(container, message, type) {
+            container.innerHTML = `<div>${message}</div>`;
+            container.className = `results result-${type} show`;
+        }
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const activeSection = document.querySelector('.section.active');
+                if (activeSection.id === 'phishing-section') {
+                    checkPhishing();
+                } else {
+                    checkPassword();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

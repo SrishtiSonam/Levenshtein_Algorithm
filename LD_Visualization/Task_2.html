@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levenshtein Distance Matrix Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, rgb(189, 122, 255) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: #5070ff;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #e1e8ff;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .cost-inputs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .cost-inputs .input-group {
+            flex: 0 1 120px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            margin: 0 auto;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .visualization {
+            margin-top: 30px;
+        }
+
+        .step-info {
+            background: #c8e7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .step-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .strings-display {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .string-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .string-chars {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .char-box {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .char-box.highlight {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .matrix-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .matrix-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .dp-matrix {
+            border-collapse: collapse;
+            margin: 0 auto;
+            font-family: monospace;
+        }
+
+        .matrix-cell {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 600;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .matrix-cell.header {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .matrix-cell.current {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .matrix-cell.filled {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .matrix-cell.base-case {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        .comparison {
+            background: #ffe590;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            min-height: 120px;
+        }
+
+        .result {
+            background: #b4ffc5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .result h3 {
+            color: #155724;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .operations-list {
+            background: #9faeff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .operations-list h4 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .operation {
+            background: rgb(178, 242, 255);
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        .operation.match {
+            background: #a8ffb5;
+        }
+
+        .operation.replace {
+            background: #fff09a;
+        }
+
+        .operation.insert {
+            background: #acd1ff;
+        }
+
+        .operation.delete {
+            background: #fe9393;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .cost-inputs {
+                flex-direction: column;
+            }
+            
+            .matrix-cell {
+                width: 40px;
+                height: 40px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Levenshtein Distance Matrix Visualizer</h1>
+        </div>
+
+        <div class="input-section">
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="string1">String 1 (Original):</label>
+                    <input type="text" id="string1" placeholder="e.g., kitten" value="kitten">
+                </div>
+                <div class="input-group">
+                    <label for="string2">String 2 (Target):</label>
+                    <input type="text" id="string2" placeholder="e.g., sitting" value="sitting">
+                </div>
+            </div>
+            
+            <div class="input-row">
+                <div class="cost-inputs">
+                    <div class="input-group">
+                        <label for="insertCost">Insert Cost:</label>
+                        <input type="number" id="insertCost" value="1" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="deleteCost">Delete Cost:</label>
+                        <input type="number" id="deleteCost" value="2" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="substituteCost">Replace Cost:</label>
+                        <input type="number" id="substituteCost" value="3" min="1">
+                    </div>
+                </div>
+                <button class="btn" onclick="startVisualization()">Calculate & Visualize</button>
+            </div>
+        </div>
+
+        <div id="visualization" class="visualization" style="display: none;">
+            <div class="strings-display">
+                <div class="string-box">
+                    <h4>String 1: <span id="str1Display"></span></h4>
+                    <div id="str1Chars" class="string-chars"></div>
+                </div>
+                <div class="string-box">
+                    <h4>String 2: <span id="str2Display"></span></h4>
+                    <div id="str2Chars" class="string-chars"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn-secondary" onclick="previousStep()" id="prevBtn"> Previous</button>
+                <button class="btn-secondary" onclick="nextStep()" id="nextBtn">Next</button>
+                <button class="btn-secondary" onclick="autoPlay()" id="autoBtn">Auto Play</button>
+            </div>
+
+            <div id="stepInfo" class="step-info"></div>
+            
+            <div class="matrix-container">
+                <div class="matrix-title">DP Matrix</div>
+                <div id="matrixContainer"></div>
+            </div>
+            
+            <div id="comparisonBox" class="comparison"></div>
+            <div id="result" class="result" style="display: none;"></div>
+            <div id="operationsList" class="operations-list" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let algorithm = {
+            str1: '',
+            str2: '',
+            insertCost: 1,
+            deleteCost: 1,
+            substituteCost: 1,
+            steps: [],
+            currentStep: 0,
+            isAutoPlaying: false,
+            operations: []
+        };
+
+        function startVisualization() {
+            algorithm.str1 = document.getElementById('string1').value.trim();
+            algorithm.str2 = document.getElementById('string2').value.trim();
+            algorithm.insertCost = parseInt(document.getElementById('insertCost').value);
+            algorithm.deleteCost = parseInt(document.getElementById('deleteCost').value);
+            algorithm.substituteCost = parseInt(document.getElementById('substituteCost').value);
+            if (!algorithm.str1 || !algorithm.str2) {
+                alert('Please enter both strings!');
+                return;
+            }
+            algorithm.steps = [];
+            algorithm.currentStep = 0;
+            algorithm.isAutoPlaying = false;
+            algorithm.operations = [];
+            generateSteps();
+            document.getElementById('visualization').style.display = 'block';
+            displayStrings();
+            showStep(0);
+        }
+
+        function generateSteps() {
+            let str1 = algorithm.str1;
+            let str2 = algorithm.str2;
+            let m = str1.length;
+            let n = str2.length;
+
+            let dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+            let ops = Array(m + 1).fill().map(() => Array(n + 1).fill().map(() => []));
+
+            for (let i = 0; i <= m; i++) {
+                dp[i][0] = i * algorithm.deleteCost;
+                for (let k = 0; k < i; k++) {
+                    ops[i][0].push(`DELETE '${str1[k]}'`);
+                }
+                algorithm.steps.push({
+                    type: 'base_delete',
+                    dp: dp.map(row => [...row]),
+                    ops: ops.map(row => row.map(cell => [...cell])),
+                    i: i,
+                    j: 0,
+                    description: `Base case: dp[${i}][0] = ${dp[i][0]} (cost of deleting ${i} characters)`
+                });
+            }
+
+            for (let j = 1; j <= n; j++) {
+                dp[0][j] = j * algorithm.insertCost;
+                for (let k = 0; k < j; k++) {
+                    ops[0][j].push(`INSERT '${str2[k]}'`);
+                }
+                algorithm.steps.push({
+                    type: 'base_insert',
+                    dp: dp.map(row => [...row]),
+                    ops: ops.map(row => row.map(cell => [...cell])),
+                    i: 0,
+                    j: j,
+                    description: `Base case: dp[0][${j}] = ${dp[0][j]} (cost of inserting ${j} characters)`
+                });
+            }
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    let char1 = str1[i-1];
+                    let char2 = str2[j-1];
+                    
+                    if (char1 === char2) {
+                        dp[i][j] = dp[i-1][j-1];
+                        ops[i][j] = [...ops[i-1][j-1]];
+                        ops[i][j].push(`MATCH '${char1}'`);
+                        
+                        algorithm.steps.push({
+                            type: 'match',
+                            dp: dp.map(row => [...row]),
+                            ops: ops.map(row => row.map(cell => [...cell])),
+                            i: i,
+                            j: j,
+                            char1: char1,
+                            char2: char2,
+                            description: `Match found! '${char1}' == '${char2}'. dp[${i}][${j}] = dp[${i-1}][${j-1}] = ${dp[i][j]}`
+                        });
+                    } else {
+                        let ins = dp[i][j-1] + algorithm.insertCost;
+                        let del = dp[i-1][j] + algorithm.deleteCost;
+                        let rep = dp[i-1][j-1] + algorithm.substituteCost;
+                        
+                        let minVal = Math.min(ins, del, rep);
+                        dp[i][j] = minVal;
+                        
+                        if (minVal === rep) {
+                            ops[i][j] = [...ops[i-1][j-1]];
+                            ops[i][j].push(`REPLACE '${char1}' with '${char2}'`);
+                        } else if (minVal === del) {
+                            ops[i][j] = [...ops[i-1][j]];
+                            ops[i][j].push(`DELETE '${char1}'`);
+                        } else {
+                            ops[i][j] = [...ops[i][j-1]];
+                            ops[i][j].push(`INSERT '${char2}'`);
+                        }
+                        
+                        let operation = minVal === rep ? 'replace' : (minVal === del ? 'delete' : 'insert');
+                        
+                        algorithm.steps.push({
+                            type: 'no_match',
+                            dp: dp.map(row => [...row]),
+                            ops: ops.map(row => row.map(cell => [...cell])),
+                            i: i,
+                            j: j,
+                            char1: char1,
+                            char2: char2,
+                            ins: ins,
+                            del: del,
+                            rep: rep,
+                            operation: operation,
+                            description: `No match: '${char1}' != '${char2}'. Options: insert(${ins}), delete(${del}), replace(${rep}). Choosing ${operation}: dp[${i}][${j}] = ${minVal}`
+                        });
+                    }
+                }
+            }
+
+            algorithm.steps.push({
+                type: 'final',
+                dp: dp.map(row => [...row]),
+                ops: ops.map(row => row.map(cell => [...cell])),
+                result: dp[m][n],
+                finalOps: ops[m][n],
+                description: `Algorithm complete! Minimum edit distance: ${dp[m][n]}`
+            });
+        }
+
+        function displayStrings() {
+            document.getElementById('str1Display').textContent = `"${algorithm.str1}"`;
+            document.getElementById('str2Display').textContent = `"${algorithm.str2}"`;
+            
+            // Create character boxes
+            let str1Chars = document.getElementById('str1Chars');
+            let str2Chars = document.getElementById('str2Chars');
+            
+            str1Chars.innerHTML = '';
+            str2Chars.innerHTML = '';
+            
+            for (let char of algorithm.str1) {
+                let box = document.createElement('div');
+                box.className = 'char-box';
+                box.textContent = char;
+                str1Chars.appendChild(box);
+            }
+            
+            for (let char of algorithm.str2) {
+                let box = document.createElement('div');
+                box.className = 'char-box';
+                box.textContent = char;
+                str2Chars.appendChild(box);
+            }
+        }
+
+        function showStep(stepIndex) {
+            if (stepIndex < 0 || stepIndex >= algorithm.steps.length) return;
+            
+            algorithm.currentStep = stepIndex;
+            let step = algorithm.steps[stepIndex];
+            
+            document.getElementById('stepInfo').innerHTML = `
+                <h3>Step ${stepIndex + 1} of ${algorithm.steps.length}</h3>
+                <p>${step.description}</p>
+            `;
+            
+            highlightCharacters(step);
+            showMatrix(step);
+            showComparisonBox(step);
+            
+            document.getElementById('prevBtn').disabled = stepIndex === 0;
+            document.getElementById('nextBtn').disabled = stepIndex === algorithm.steps.length - 1;
+            
+            if (step.type === 'final') {
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').innerHTML = `
+                    <h3> Final Result</h3>
+                    <p>The minimum edit distance between "${algorithm.str1}" and "${algorithm.str2}" is <strong>${step.result}</strong></p>
+                `;
+                
+                document.getElementById('operationsList').style.display = 'block';
+                let opsHtml = '<h4>Operations to transform the strings:</h4>';
+                step.finalOps.forEach(op => {
+                    let className = 'operation';
+                    if (op.includes('MATCH')) className += ' match';
+                    else if (op.includes('REPLACE')) className += ' replace';
+                    else if (op.includes('INSERT')) className += ' insert';
+                    else if (op.includes('DELETE')) className += ' delete';
+                    
+                    opsHtml += `<div class="${className}">${op}</div>`;
+                });
+                document.getElementById('operationsList').innerHTML = opsHtml;
+            } else {
+                document.getElementById('result').style.display = 'none';
+                document.getElementById('operationsList').style.display = 'none';
+            }
+        }
+
+        function highlightCharacters(step) {
+            document.querySelectorAll('.char-box').forEach(box => {
+                box.classList.remove('highlight');
+            });
+            
+            if (step.i !== undefined && step.j !== undefined && step.i > 0 && step.j > 0) {
+                let str1Chars = document.getElementById('str1Chars').children;
+                let str2Chars = document.getElementById('str2Chars').children;
+                
+                if (str1Chars[step.i - 1]) str1Chars[step.i - 1].classList.add('highlight');
+                if (str2Chars[step.j - 1]) str2Chars[step.j - 1].classList.add('highlight');
+            }
+        }
+
+        function showMatrix(step) {
+            let container = document.getElementById('matrixContainer');
+            let table = document.createElement('table');
+            table.className = 'dp-matrix';
+            
+            let m = algorithm.str1.length;
+            let n = algorithm.str2.length;
+            
+            let headerRow = document.createElement('tr');
+            headerRow.appendChild(createCell('', 'header'));
+            headerRow.appendChild(createCell('ε', 'header'));
+            for (let j = 0; j < n; j++) {
+                headerRow.appendChild(createCell(algorithm.str2[j], 'header'));
+            }
+            table.appendChild(headerRow);
+            
+            for (let i = 0; i <= m; i++) {
+                let row = document.createElement('tr');
+                
+                if (i === 0) {
+                    row.appendChild(createCell('ε', 'header'));
+                } else {
+                    row.appendChild(createCell(algorithm.str1[i-1], 'header'));
+                }
+                
+                for (let j = 0; j <= n; j++) {
+                    let value = step.dp && step.dp[i] && step.dp[i][j] !== undefined ? step.dp[i][j] : '';
+                    let cell = createCell(value, '');
+                    
+                    if (step.i === i && step.j === j) {
+                        cell.classList.add('current');
+                    } else if (value !== '' && (step.type === 'base_delete' || step.type === 'base_insert')) {
+                        cell.classList.add('base-case');
+                    } else if (value !== '' && step.dp && step.dp[i] && step.dp[i][j] !== undefined) {
+                        cell.classList.add('filled');
+                    }
+                    
+                    row.appendChild(cell);
+                }
+                
+                table.appendChild(row);
+            }
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+        }
+
+        function createCell(content, className) {
+            let cell = document.createElement('td');
+            cell.className = `matrix-cell ${className}`;
+            cell.textContent = content;
+            return cell;
+        }
+
+        function showComparisonBox(step) {
+            let box = document.getElementById('comparisonBox');
+            box.style.minHeight = '120px';
+            
+            if (step.type === 'match') {
+                box.innerHTML = `
+                    <strong>Character Match Found!</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #d4edda; border-radius: 5px;">
+                        '${step.char1}' == '${step.char2}' ✓<br>
+                        <strong>No additional cost needed!</strong><br>
+                        dp[${step.i}][${step.j}] = dp[${step.i-1}][${step.j-1}] = ${step.dp[step.i][step.j]}
+                    </div>
+                `;
+            } else if (step.type === 'no_match') {
+                box.innerHTML = `
+                    <strong>Cost Calculation (No Match):</strong><br>
+                    <div style="margin: 10px 0;">
+                        • <strong>Insert:</strong> dp[${step.i}][${step.j-1}] + ${algorithm.insertCost} = ${step.ins}<br>
+                        • <strong>Delete:</strong> dp[${step.i-1}][${step.j}] + ${algorithm.deleteCost} = ${step.del}<br>
+                        • <strong>Replace:</strong> dp[${step.i-1}][${step.j-1}] + ${algorithm.substituteCost} = ${step.rep}<br>
+                    </div>
+                    <div style="background: #fff3cd; padding: 8px; border-radius: 4px;>
+                        <strong>Minimum: ${step.dp[step.i][step.j]} (${step.operation})</strong>
+                    </div>
+                `;
+            } else if (step.type === 'base_delete') {
+                box.innerHTML = `
+                    <strong>Base Case - Deletion:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                        Setting up base case for deleting ${step.i} characters from string 1.<br>
+                        Cost = ${step.i} × ${algorithm.deleteCost} = ${step.dp[step.i][0]}<br>
+                        <strong>Operations needed:</strong> ${step.i} deletions
+                    </div>
+                `;
+            } else if (step.type === 'base_insert') {
+                box.innerHTML = `
+                    <strong>Base Case - Insertion:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #f3e5f5; border-radius: 5px;">
+                        Setting up base case for inserting ${step.j} characters from string 2.<br>
+                        Cost = ${step.j} × ${algorithm.insertCost} = ${step.dp[0][step.j]}<br>
+                        <strong>Operations needed:</strong> ${step.j} insertions
+                    </div>
+                `;
+            } else {
+                box.innerHTML = `
+                    <strong>Algorithm Status:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                        ${step.description || 'Processing step...'}<br>
+                        <strong>Current phase:</strong> ${step.type || 'Unknown'}
+                    </div>
+                `;
+            }
+        }
+
+        function nextStep() {
+            if (algorithm.currentStep < algorithm.steps.length - 1) {
+                showStep(algorithm.currentStep + 1);
+            }
+        }
+
+        function previousStep() {
+            if (algorithm.currentStep > 0) {
+                showStep(algorithm.currentStep - 1);
+            }
+        }
+
+        function autoPlay() {
+            if (algorithm.isAutoPlaying) {
+                algorithm.isAutoPlaying = false;
+                document.getElementById('autoBtn').innerHTML = 'Auto Play';
+                return;
+            }
+            
+            algorithm.isAutoPlaying = true;
+            document.getElementById('autoBtn').innerHTML = 'Pause';
+            
+            function playNext() {
+                if (!algorithm.isAutoPlaying) return;
+                
+                if (algorithm.currentStep < algorithm.steps.length - 1) {
+                    nextStep();
+                    setTimeout(playNext, 2000);
+                } else {
+                    algorithm.isAutoPlaying = false;
+                    document.getElementById('autoBtn').innerHTML = 'Auto Play';
+                }
+            }
+            
+            playNext();
+        }
+
+        window.onload = function() {
+            startVisualization();
+        };
+    </script>
+</body>
+</html>

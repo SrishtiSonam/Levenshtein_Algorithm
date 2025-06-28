@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levenshtein Distance Vector Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, rgb(189, 122, 255) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: #4b66df;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .cost-inputs {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .cost-inputs .input-group {
+            flex: 0 1 120px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            margin: auto;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .visualization {
+            margin-top: 30px;
+        }
+
+        .step-info {
+            background: #859cff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;;
+        }
+
+        .step-info h3 {
+            color: #252525;
+            margin-bottom: 10px;
+        }
+
+        .vectors-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .vector {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .vector-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .vector-cells {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .vector-cell {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-weight: 600;
+            background: #f9f9f9;
+            transition: all 0.3s ease;
+        }
+
+        .vector-cell.highlight {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .vector-cell.current {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
+        }
+
+        .comparison {
+            background:#fdcf46;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .result {
+            background: #57ff7f;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .result h3 {
+            color: #00340c;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .strings-display {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .string-box {
+            background: rgb(177, 177, 177);
+            padding: 15px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .string-chars {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .char-box {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #dee2e6;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .char-box.highlight {
+            background: #667eea;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1> Levenshtein Distance Vector Visualizer </h1>
+        </div>
+        <div class="input-section">
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="string1">String 1 (Original):</label>
+                    <input type="text" id="string1" placeholder="e.g., kitten" value="kitten">
+                </div>
+                <div class="input-group">
+                    <label for="string2">String 2 (Target):</label>
+                    <input type="text" id="string2" placeholder="e.g., sitting" value="sitting">
+                </div>
+            </div>
+            <div class="input-row">
+                <div class="cost-inputs">
+                    <div class="input-group">
+                        <label for="insertCost">Insert Cost:</label>
+                        <input type="number" id="insertCost" value="1" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="deleteCost">Delete Cost:</label>
+                        <input type="number" id="deleteCost" value="2" min="1">
+                    </div>
+                    <div class="input-group">
+                        <label for="substituteCost">Substitute Cost:</label>
+                        <input type="number" id="substituteCost" value="3" min="1">
+                    </div>
+                </div>
+                <button class="btn" onclick="startVisualization()">Calculate & Visualize</button>
+            </div>
+        </div>
+        <div id="visualization" class="visualization" style="display: none;">
+            <div class="strings-display">
+                <div class="string-box">
+                    <h4>String 1: <span id="str1Display"></span></h4>
+                    <div id="str1Chars" class="string-chars"></div>
+                </div>
+                <div class="string-box">
+                    <h4>String 2: <span id="str2Display"></span></h4>
+                    <div id="str2Chars" class="string-chars"></div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn-secondary" onclick="previousStep()" id="prevBtn"> Previous </button>
+                <button class="btn-secondary" onclick="nextStep()" id="nextBtn">Next </button>
+                <button class="btn-secondary" onclick="autoPlay()" id="autoBtn"> Auto Play</button>
+            </div>
+            <div id="stepInfo" class="step-info"></div>
+            <div id="vectorsContainer" class="vectors-container"></div>
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let algorithm = {
+            str1: '',
+            str2: '',
+            insertCost: 1,
+            deleteCost: 1,
+            substituteCost: 1,
+            steps: [],
+            currentStep: 0,
+            isAutoPlaying: false
+        };
+
+        function startVisualization() {
+            algorithm.str1 = document.getElementById('string1').value.trim();
+            algorithm.str2 = document.getElementById('string2').value.trim();
+            algorithm.insertCost = parseInt(document.getElementById('insertCost').value);
+            algorithm.deleteCost = parseInt(document.getElementById('deleteCost').value);
+            algorithm.substituteCost = parseInt(document.getElementById('substituteCost').value);
+
+            if (!algorithm.str1 || !algorithm.str2) {
+                alert('Please enter both strings!');
+                return;
+            }
+            algorithm.steps = [];
+            algorithm.currentStep = 0;
+            algorithm.isAutoPlaying = false;
+            generateSteps();
+            document.getElementById('visualization').style.display = 'block';
+            displayStrings();
+            showStep(0);
+        }
+
+        function generateSteps() {
+            let str1 = algorithm.str1;
+            let str2 = algorithm.str2;
+            let m = str1.length;
+            let n = str2.length;
+
+            let swapped = false;
+            if (m > n) {
+                [str1, str2] = [str2, str1];
+                [m, n] = [n, m];
+                swapped = true;
+            }
+
+            let prev = new Array(m + 1);
+            let curr = new Array(m + 1);
+
+            for (let i = 0; i <= m; i++) {
+                prev[i] = i * algorithm.deleteCost;
+            }
+
+            algorithm.steps.push({
+                type: 'init',
+                prev: [...prev],
+                curr: new Array(m + 1).fill(0),
+                description: `Initialization: Setting up base cases for deletions`,
+                str1, str2, m, n, swapped
+            });
+
+            for (let j = 1; j <= n; j++) {
+                curr[0] = j * algorithm.insertCost;
+                
+                algorithm.steps.push({
+                    type: 'column_start',
+                    prev: [...prev],
+                    curr: [...curr],
+                    j: j,
+                    char2: str2[j-1],
+                    description: `Processing column ${j} (character '${str2[j-1]}'). Setting curr[0] = ${curr[0]} (cost of ${j} insertions)`,
+                    str1, str2, m, n, swapped
+                });
+
+                for (let i = 1; i <= m; i++) {
+                    let char1 = str1[i-1];
+                    let char2 = str2[j-1];
+                    
+                    if (char1 === char2) {
+                        curr[i] = prev[i-1];
+                        algorithm.steps.push({
+                            type: 'match',
+                            prev: [...prev],
+                            curr: [...curr],
+                            i, j, char1, char2,
+                            description: `Match! '${char1}' == '${char2}'. No additional cost: curr[${i}] = prev[${i-1}] = ${curr[i]}`,
+                            str1, str2, m, n, swapped
+                        });
+                    } else {
+                        let substitute = prev[i-1] + algorithm.substituteCost;
+                        let insert = curr[i-1] + algorithm.insertCost;
+                        let del = prev[i] + algorithm.deleteCost;
+                        
+                        curr[i] = Math.min(substitute, insert, del);
+                        
+                        let operation = '';
+                        if (curr[i] === substitute) operation = 'substitute';
+                        else if (curr[i] === insert) operation = 'insert';
+                        else operation = 'delete';
+                        
+                        algorithm.steps.push({
+                            type: 'no_match',
+                            prev: [...prev],
+                            curr: [...curr],
+                            i, j, char1, char2,
+                            substitute, insert, del: del,
+                            operation,
+                            description: `No match: '${char1}' != '${char2}'. Options: substitute(${substitute}), insert(${insert}), delete(${del}). Choosing ${operation}: curr[${i}] = ${curr[i]}`,
+                            str1, str2, m, n, swapped
+                        });
+                    }
+                }
+                
+                prev = [...curr];
+                
+                algorithm.steps.push({
+                    type: 'column_end',
+                    prev: [...prev],
+                    curr: [...curr],
+                    j: j,
+                    description: `Column ${j} complete. Moving curr to prev for next iteration.`,
+                    str1, str2, m, n, swapped
+                });
+            }
+
+            algorithm.steps.push({
+                type: 'final',
+                prev: [...prev],
+                result: prev[m],
+                description: `Algorithm complete! Minimum edit distance: ${prev[m]}`,
+                str1, str2, m, n, swapped
+            });
+        }
+
+        function displayStrings() {
+            let step = algorithm.steps[0];
+            document.getElementById('str1Display').textContent = `"${step.str1}"`;
+            document.getElementById('str2Display').textContent = `"${step.str2}"`;
+            
+            let str1Chars = document.getElementById('str1Chars');
+            let str2Chars = document.getElementById('str2Chars');
+            
+            str1Chars.innerHTML = '';
+            str2Chars.innerHTML = '';
+            
+            for (let char of step.str1) {
+                let box = document.createElement('div');
+                box.className = 'char-box';
+                box.textContent = char;
+                str1Chars.appendChild(box);
+            }
+            
+            for (let char of step.str2) {
+                let box = document.createElement('div');
+                box.className = 'char-box';
+                box.textContent = char;
+                str2Chars.appendChild(box);
+            }
+        }
+
+        function showStep(stepIndex) {
+            if (stepIndex < 0 || stepIndex >= algorithm.steps.length) return;
+            
+            algorithm.currentStep = stepIndex;
+            let step = algorithm.steps[stepIndex];
+            
+            document.getElementById('stepInfo').innerHTML = `
+                <h3>Step ${stepIndex + 1} of ${algorithm.steps.length}</h3>
+                <p>${step.description}</p>
+            `;
+            
+            highlightCharacters(step);
+            showVectors(step);
+            
+            document.getElementById('prevBtn').disabled = stepIndex === 0;
+            document.getElementById('nextBtn').disabled = stepIndex === algorithm.steps.length - 1;
+            
+            if (step.type === 'final') {
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').innerHTML = `
+                    <h3>Final Result</h3>
+                    <p>The minimum edit distance between "${algorithm.str1}" and "${algorithm.str2}" is <strong>${step.result}</strong></p>
+                `;
+            } else {
+                document.getElementById('result').style.display = 'none';
+            }
+        }
+
+        function highlightCharacters(step) {
+            document.querySelectorAll('.char-box').forEach(box => {
+                box.classList.remove('highlight');
+            });
+            
+            if (step.i !== undefined && step.j !== undefined) {
+                let str1Chars = document.getElementById('str1Chars').children;
+                let str2Chars = document.getElementById('str2Chars').children;
+                
+                if (str1Chars[step.i - 1]) str1Chars[step.i - 1].classList.add('highlight');
+                if (str2Chars[step.j - 1]) str2Chars[step.j - 1].classList.add('highlight');
+            }
+        }
+
+        function showVectors(step) {
+            let container = document.getElementById('vectorsContainer');
+            container.innerHTML = '';
+            
+            if (step.prev && step.prev.length > 0) {
+                let prevVector = createVectorDisplay('Previous Vector (prev)', step.prev, step.i - 1);
+                container.appendChild(prevVector);
+            }
+            
+            if (step.curr && step.curr.length > 0) {
+                let currVector = createVectorDisplay('Current Vector (curr)', step.curr, step.i);
+                container.appendChild(currVector);
+            }
+            
+            let comparison = document.createElement('div');
+            comparison.className = 'comparison';
+            comparison.style.minHeight = '120px'; 
+            
+            if (step.type === 'match') {
+                comparison.innerHTML = `
+                    <strong>Character Match Found!</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #d4edda; border-radius: 5px;">
+                        '${step.char1}' == '${step.char2}' ✓<br>
+                        <strong>No additional cost needed!</strong><br>
+                        curr[${step.i}] = prev[${step.i - 1}] = ${step.curr[step.i]}
+                    </div>
+                `;
+            } else if (step.substitute !== undefined) {
+                comparison.innerHTML = `
+                    <strong>Cost Calculation (No Match):</strong><br>
+                    <div style="margin: 10px 0;">
+                        • <strong>Substitute:</strong> prev[${step.i - 1}] + ${algorithm.substituteCost} = ${step.substitute}<br>
+                        • <strong>Insert:</strong> curr[${step.i - 1}] + ${algorithm.insertCost} = ${step.insert}<br>
+                        • <strong>Delete:</strong> prev[${step.i}] + ${algorithm.deleteCost} = ${step.del}<br>
+                    </div>
+                    <div style="background: #fff3cd; padding: 8px; border-radius: 4px; border-left: 4px solid #ffc107;">
+                        <strong>Minimum: ${Math.min(step.substitute, step.insert, step.del)} (${step.operation})</strong>
+                    </div>
+                `;
+            } else if (step.type === 'init') {
+                comparison.innerHTML = `
+                    <strong>Initialization Phase:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                        Setting up base cases for deletion costs.<br>
+                        Each position represents the cost of deleting that many characters.<br>
+                        <strong>Pattern:</strong> prev[i] = i × delete_cost
+                    </div>
+                `;
+            } else if (step.type === 'column_start') {
+                comparison.innerHTML = `
+                    <strong>New Column Processing:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #f3e5f5; border-radius: 5px;">
+                        Processing character '${step.char2}' from string 2.<br>
+                        Setting curr[0] = ${step.curr[0]} (cost of ${step.j} insertions)<br>
+                        <strong>Ready to compare with string 1 characters...</strong>
+                    </div>
+                `;
+            } else {
+                comparison.innerHTML = `
+                    <strong>Algorithm Status:</strong><br>
+                    <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                        ${step.description || 'Processing step...'}<br>
+                        <strong>Current phase:</strong> ${step.type || 'Unknown'}
+                    </div>
+                `;
+            }
+            
+            container.appendChild(comparison);
+        }
+
+        function createVectorDisplay(label, vector, highlightIndex) {
+            let vectorDiv = document.createElement('div');
+            vectorDiv.className = 'vector';
+            
+            let labelDiv = document.createElement('div');
+            labelDiv.className = 'vector-label';
+            labelDiv.textContent = label;
+            vectorDiv.appendChild(labelDiv);
+            
+            let cellsDiv = document.createElement('div');
+            cellsDiv.className = 'vector-cells';
+            
+            if (vector && vector.length > 0) {
+                for (let i = 0; i < vector.length; i++) {
+                    let cell = document.createElement('div');
+                    cell.className = 'vector-cell';
+                    cell.textContent = vector[i] !== undefined ? vector[i] : '?';
+                    
+                    if (i === highlightIndex) {
+                        cell.classList.add('current');
+                    } else if (vector[i] !== undefined && vector[i] !== 0 && label.includes('prev')) {
+                        cell.classList.add('highlight');
+                    }
+                    
+                    cellsDiv.appendChild(cell);
+                }
+            }
+            
+            vectorDiv.appendChild(cellsDiv);
+            return vectorDiv;
+        }
+
+        function nextStep() {
+            if (algorithm.currentStep < algorithm.steps.length - 1) {
+                showStep(algorithm.currentStep + 1);
+            }
+        }
+
+        function previousStep() {
+            if (algorithm.currentStep > 0) {
+                showStep(algorithm.currentStep - 1);
+            }
+        }
+
+        function autoPlay() {
+            if (algorithm.isAutoPlaying) {
+                algorithm.isAutoPlaying = false;
+                document.getElementById('autoBtn').innerHTML = 'Auto Play';
+                return;
+            }
+            
+            algorithm.isAutoPlaying = true;
+            document.getElementById('autoBtn').innerHTML = 'Pause';
+            
+            function playNext() {
+                if (!algorithm.isAutoPlaying) return;
+    
+                if (algorithm.currentStep < algorithm.steps.length - 1) {
+                    nextStep();
+                    setTimeout(playNext, 2000);
+                } else {
+                    algorithm.isAutoPlaying = false;
+                    document.getElementById('autoBtn').innerHTML = 'Auto Play';
+                }
+            }
+            playNext();
+        }
+
+        window.onload = function() {
+            startVisualization();
+        };
+    </script>
+</body>
+</html>
